@@ -20,14 +20,18 @@
       theme: { 
         extend: { 
           fontFamily: { sans: ['Inter', 'sans-serif'] }, 
-          colors: { primary: '#6366f1', secondary: '#818cf8' } 
+          colors: { 
+            primary: '#6366f1', 
+            secondary: '#818cf8',
+            darkBg: '#0f172a',
+            darkCard: '#1e293b'
+          } 
         } 
       }
     }
   </script>
   <style>
     body { font-family: 'Inter', sans-serif; }
-    /* スクロールバーのダークモード対応 */
     ::-webkit-scrollbar { width: 8px; height: 8px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; border: 2px solid transparent; background-clip: padding-box; }
@@ -41,13 +45,13 @@
     .custom-scrollbar::-webkit-scrollbar { width: 4px; }
   </style>
 </head>
-<body class="bg-gray-50 dark:bg-slate-950 text-gray-800 dark:text-slate-200 antialiased overflow-hidden transition-colors duration-300">
+<body class="bg-gray-50 dark:bg-darkBg text-gray-800 dark:text-slate-200 antialiased overflow-hidden transition-colors duration-300">
   <div id="app" class="flex h-screen w-full relative">
 
     <!-- Settings Modal -->
     <transition name="fade">
       <div v-if="!settingsValid" class="fixed inset-0 bg-gray-900/60 dark:bg-slate-950/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-        <div class="bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-2xl w-full max-w-md border border-transparent dark:border-slate-800 transition-colors duration-300">
+        <div class="bg-white dark:bg-darkCard p-8 rounded-2xl shadow-2xl w-full max-w-md border border-transparent dark:border-slate-800 transition-colors duration-300">
           <div class="flex items-center space-x-3 mb-6">
             <div class="bg-primary/10 dark:bg-indigo-500/20 p-2 rounded-full text-primary dark:text-indigo-400"><span class="material-icons-round text-2xl">settings</span></div>
             <h2 class="text-2xl font-bold dark:text-white">システム設定</h2>
@@ -55,15 +59,15 @@
           <div class="space-y-4 mb-8">
             <div>
               <label class="block text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-1">Gemini API Key</label>
-              <input v-model="settings.geminiKey" type="password" class="w-full p-3 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 dark:text-white transition-colors duration-300">
+              <input v-model="settings.geminiKey" type="password" class="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 dark:text-white transition-colors duration-300">
             </div>
             <div>
               <label class="block text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-1">Gemini Model</label>
-              <input v-model="settings.geminiModel" type="text" class="w-full p-3 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 dark:text-white transition-colors duration-300">
+              <input v-model="settings.geminiModel" type="text" class="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 dark:text-white transition-colors duration-300">
             </div>
             <div>
               <label class="block text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-1">GAS Web App URL</label>
-              <input v-model="settings.gasUrl" type="text" class="w-full p-3 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 dark:text-white transition-colors duration-300">
+              <input v-model="settings.gasUrl" type="text" class="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 dark:text-white transition-colors duration-300">
             </div>
           </div>
           <button @click="saveSettings" class="w-full bg-primary dark:bg-indigo-600 hover:bg-indigo-700 dark:hover:bg-indigo-500 text-white font-semibold py-3.5 rounded-xl transition-all flex justify-center items-center shadow-lg shadow-primary/20 dark:shadow-none">
@@ -110,7 +114,7 @@
     </aside>
 
     <!-- Main Content -->
-    <main class="flex-1 flex flex-col h-screen min-w-0 bg-gray-50/50 dark:bg-slate-950 transition-colors duration-300">
+    <main class="flex-1 flex flex-col h-screen min-w-0 bg-gray-50/50 dark:bg-darkBg transition-colors duration-300">
       
       <div v-if="currentApp" class="flex-1 flex flex-col h-full">
         <!-- Header -->
@@ -164,7 +168,7 @@
 
           <!-- Preview Tab -->
           <div v-show="activeTab === 'preview'" 
-               :class="isFullscreen ? 'fixed inset-0 z-[100] bg-white dark:bg-slate-950 flex flex-col' : 'absolute inset-0 flex flex-col p-2 sm:p-4'">
+               :class="isFullscreen ? 'fixed inset-0 z-[100] bg-white dark:bg-darkBg flex flex-col' : 'absolute inset-0 flex flex-col p-2 sm:p-4'">
             <div v-if="!isFullscreen" class="flex justify-between items-center mb-2 px-1">
               <span class="text-xs font-medium text-gray-500 dark:text-slate-400 hidden sm:inline-block">ライブプレビュー（サンドボックス）</span>
               <div class="ml-auto flex space-x-2">
@@ -182,7 +186,6 @@
               </div>
             </div>
             <div :class="isFullscreen ? 'flex-1 w-full h-full relative bg-white dark:bg-slate-900' : 'flex-1 rounded-xl overflow-hidden border border-gray-200 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-900 relative transition-colors duration-300'">
-              <!-- Iframe inherits dark/light state via injected scripts -->
               <iframe ref="previewFrame" class="w-full h-full border-0 bg-white dark:bg-slate-950 transition-colors duration-300" sandbox="allow-scripts allow-forms allow-modals allow-popups allow-same-origin"></iframe>
             </div>
           </div>
@@ -196,7 +199,7 @@
               </div>
               
               <div v-for="(ver, index) in versions" :key="ver.VersionID" 
-                   class="bg-white dark:bg-slate-900 rounded-2xl p-5 sm:p-6 shadow-sm border transition-all duration-300"
+                   class="bg-white dark:bg-darkCard rounded-2xl p-5 sm:p-6 shadow-sm border transition-all duration-300"
                    :class="ver.HasRegression ? 'border-red-300 dark:border-red-900/50 shadow-red-100 dark:shadow-none' : 'border-gray-100 dark:border-slate-800'">
                 
                 <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-2">
@@ -254,40 +257,57 @@
                 <details class="group">
                   <summary class="cursor-pointer text-sm text-primary dark:text-indigo-400 font-medium hover:text-indigo-800 dark:hover:text-indigo-300 flex items-center list-none outline-none transition-colors">
                     <span class="material-icons-round text-sm mr-1 transition-transform group-open:rotate-90">chevron_right</span> コード全文を表示
+                    <button @click.stop="copyCode(ver)" class="ml-3 flex items-center text-xs bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 px-2 py-0.5 rounded border border-gray-300 dark:border-slate-600 text-gray-600 dark:text-slate-300 transition-colors">
+                      <span class="material-icons-round text-[14px] mr-1">{{ ver.isCopying ? 'check' : 'content_copy' }}</span>
+                      {{ ver.isCopying ? 'コピーが完了しました' : 'コードをコピー' }}
+                    </button>
                   </summary>
-                  <pre class="bg-[#1e1e1e] text-gray-300 p-4 rounded-xl mt-3 text-xs overflow-x-auto font-mono leading-relaxed border border-gray-800">{{ ver.Code }}</pre>
+                  <div class="mt-3">
+                    <pre class="bg-[#1e1e1e] text-gray-300 p-4 rounded-xl text-xs overflow-x-auto font-mono leading-relaxed border border-gray-800">{{ ver.Code }}</pre>
+                  </div>
                 </details>
               </div>
             </div>
           </div>
 
-          <!-- AI Assist Tab (Smart Patcher Integration) -->
-          <div v-show="activeTab === 'prompt'" class="absolute inset-0 overflow-y-auto p-4 sm:p-6">
+          <!-- AI Assist Tab (統合UI) -->
+          <div v-show="activeTab === 'prompt'" class="absolute inset-0 overflow-y-auto p-4 sm:p-6 bg-gray-50 dark:bg-darkBg theme-transition">
             <div class="max-w-4xl mx-auto flex flex-col h-full space-y-4">
-              
-              <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 flex-1 flex flex-col relative min-h-[300px] transition-colors duration-300">
-                <div class="flex justify-between items-center mb-2">
-                  <label class="block text-sm font-bold text-gray-700 dark:text-slate-200">AIへの修正指示（Smart Patch）</label>
-                  <button @click="isRecording ? stopRecording() : startRecording()" 
-                          :class="isRecording ? 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/30' : 'bg-blue-50 dark:bg-indigo-500/10 text-blue-600 dark:text-indigo-300 border border-blue-200 dark:border-indigo-500/30'"
-                          class="px-3 py-1.5 rounded-lg flex items-center text-xs font-bold transition-all shadow-sm"
-                          :disabled="isProcessingAudio || isPatching">
-                    <span class="material-icons-round text-sm mr-1" :class="{'animate-pulse': isRecording}">{{ isRecording ? 'stop_circle' : 'mic' }}</span>
-                    {{ isRecording ? '録音を停止' : '音声で入力' }}
+              <div class="bg-white dark:bg-darkCard p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-800 flex flex-col h-full transition-colors duration-300">
+                <div class="flex bg-gray-100 dark:bg-slate-950 p-1 rounded-xl mb-4">
+                  <button @click="aiMode = 'patch'" :class="['flex-1 py-2 text-sm font-bold rounded-lg transition-all', aiMode === 'patch' ? 'bg-indigo-600 text-white shadow-lg' : 'text-gray-500 dark:text-slate-400 hover:text-gray-700']">スマートパッチ</button>
+                  <button @click="aiMode = 'prompt'" :class="['flex-1 py-2 text-sm font-bold rounded-lg transition-all', aiMode === 'prompt' ? 'bg-indigo-600 text-white shadow-lg' : 'text-gray-500 dark:text-slate-400 hover:text-gray-700']">プロンプト生成</button>
+                </div>
+                <div class="flex-1 flex flex-col relative">
+                  <textarea v-model="sharedInput" class="w-full flex-1 p-4 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-primary/50 text-sm resize-none dark:text-slate-200 transition-colors" 
+                            :placeholder="aiMode === 'patch' ? '例: ボタンを赤色にして、角丸を強めて' : 'やりたいことを入力してください...'"></textarea>
+                  <div class="flex gap-2 mt-4">
+                    <button @click="isRecording ? stopRecording() : startRecording()" 
+                            :class="isRecording ? 'bg-red-500 text-white shadow-red-500/50' : 'bg-gray-200 dark:bg-slate-800 text-gray-700 dark:text-slate-300 hover:bg-gray-300 dark:hover:bg-slate-700'"
+                            class="px-4 py-3 rounded-xl font-bold flex items-center transition-all disabled:opacity-50"
+                            :disabled="isProcessingAudio">
+                      <span class="material-icons-round mr-2" :class="{'animate-pulse': isRecording, 'animate-spin': isProcessingAudio}">
+                        {{ isProcessingAudio ? 'autorenew' : (isRecording ? 'stop_circle' : 'mic') }}
+                      </span>
+                      {{ isRecording ? ('録音中... ' + formatTime(recordingTime)) : (isProcessingAudio ? '処理中...' : '音声入力') }}
+                    </button>
+                    <button @click="executeAiAction" :disabled="isPatching || isGeneratingPrompt || !sharedInput || isProcessingAudio" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-bold flex items-center justify-center shadow-lg disabled:opacity-50 transition-all">
+                      <span class="material-icons-round mr-2" :class="{'animate-spin': isPatching || isGeneratingPrompt}">{{ (isPatching || isGeneratingPrompt) ? 'sync' : 'play_arrow' }}</span>
+                      {{ aiMode === 'patch' ? 'パッチを適用する' : 'プロンプトを生成する' }}
+                    </button>
+                  </div>
+                </div>
+                <div v-if="aiMode === 'prompt' && finalPrompt" class="mt-4 p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl border border-indigo-200 dark:border-indigo-800 relative">
+                  <p class="text-xs text-indigo-800 dark:text-indigo-200 mb-2 font-bold">生成結果:</p>
+                  <textarea v-model="finalPrompt" class="w-full h-24 bg-transparent text-xs font-mono dark:text-slate-300 outline-none" readonly></textarea>
+                  <button @click="copyPrompt" class="absolute bottom-2 right-2 flex items-center text-[10px] bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 px-2 py-1 rounded shadow-sm hover:bg-indigo-200 dark:hover:bg-indigo-800 transition-colors">
+                    <span class="material-icons-round text-xs mr-1">{{ isCopyingPrompt ? 'check' : 'content_copy' }}</span>
+                    {{ isCopyingPrompt ? 'コピー完了！' : 'コピー' }}
                   </button>
                 </div>
-                
-                <textarea v-model="patchInstruction" class="w-full flex-1 p-4 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-primary/50 dark:focus:ring-indigo-500/50 text-sm resize-none dark:text-slate-200 dark:placeholder-slate-500 transition-colors duration-300" 
-                          placeholder="例: ヘッダーの色をグラデーションに変更して、タイトルを中央寄せにして" :disabled="isPatching"></textarea>
-                
-                <div class="mt-4 flex space-x-2">
-                  <button @click="generateAndApplyPatches" :disabled="isPatching || !patchInstruction" 
-                          class="flex-1 bg-gradient-to-r from-indigo-600 to-primary dark:from-indigo-500 dark:to-indigo-600 text-white py-3 rounded-xl font-semibold flex items-center justify-center disabled:opacity-50 shadow-lg transition-all">
-                    <span class="material-icons-round mr-2" :class="{'animate-spin': isPatching}">{{ isPatching ? 'sync' : 'auto_fix_high' }}</span>
-                    {{ isPatching ? 'パッチ適用中...' : 'スマートパッチを実行' }}
-                  </button>
-                  <button v-if="prePatchCode" @click="revertPatches" class="bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-300 px-4 py-3 rounded-xl font-semibold hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors" title="適用前のコードに戻す">
-                    <span class="material-icons-round">undo</span>
+                <div v-if="aiMode === 'patch' && prePatchCode" class="mt-4 flex">
+                  <button @click="revertPatches" class="flex-1 bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-300 px-4 py-2 rounded-xl font-semibold hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors flex items-center justify-center text-sm" title="適用前のコードに戻す">
+                    <span class="material-icons-round mr-1 text-base">undo</span> パッチ適用前に戻す
                   </button>
                 </div>
               </div>
@@ -335,7 +355,7 @@
       
       <!-- Empty State -->
       <div v-else class="flex-1 flex flex-col items-center justify-center text-center p-6">
-        <div class="bg-white dark:bg-slate-900 p-6 rounded-full shadow-sm border border-gray-100 dark:border-slate-800 mb-4 text-gray-300 dark:text-slate-600 transition-colors duration-300">
+        <div class="bg-white dark:bg-darkCard p-6 rounded-full shadow-sm border border-gray-100 dark:border-slate-800 mb-4 text-gray-300 dark:text-slate-600 transition-colors duration-300">
           <span class="material-icons-round text-6xl">code_blocks</span>
         </div>
         <h2 class="text-xl font-bold text-gray-700 dark:text-slate-200 mb-2">プロジェクトを選択してください</h2>
@@ -354,7 +374,7 @@
         return {
           settings: { geminiKey: '', geminiModel: 'gemini-2.5-flash', gasUrl: '' },
           settingsValid: false,
-          isDarkMode: false, // ★ ダークモードのステート
+          isDarkMode: false,
           apps:[],
           currentApp: null,
           versions:[],
@@ -367,11 +387,19 @@
           isPatching: false,
           patchResults:[],
           prePatchCode: null,
-
+          draftPrompt: '',
+          finalPrompt: '',
+          isGeneratingPrompt: false,
+          sharedInput: '',
+          aiMode: 'patch',
+          isRecording: false,
+          recordingTime: 0,
+          recordingTimer: null,
+          isCopyingPrompt: false,
+          
           mobileMenuOpen: false,
           mediaRecorder: null,
           audioChunks:[],
-          isRecording: false,
           isProcessingAudio: false,
           isFullscreen: false,
           btnPos: { x: 0, y: 0 },
@@ -390,7 +418,6 @@
         }
       },
       watch: {
-        // ★ ダークモードが切り替わったときにHTMLのルートとエディタに反映させる
         isDarkMode(newVal) {
           if (newVal) {
             document.documentElement.classList.add('dark');
@@ -409,7 +436,7 @@
       },
       mounted() {
         this.loadSettings();
-        this.loadTheme(); // ★ 起動時にテーマを読み込む
+        this.loadTheme();
         if (this.settingsValid) this.fetchApps();
         window.addEventListener('resize', this.handleResize);
       },
@@ -488,6 +515,78 @@
           return { index: bestIndex, matchLength: searchLen, confidence: bestScore, type: 'fuzzy' };
         },
 
+        executeAiAction() {
+          if (this.aiMode === 'patch') {
+            this.patchInstruction = this.sharedInput;
+            this.generateAndApplyPatches();
+          } else {
+            this.draftPrompt = this.sharedInput;
+            this.generatePrompt();
+          }
+        },
+        formatTime(s) {
+          const m = Math.floor(s / 60).toString().padStart(2, '0');
+          const sec = (s % 60).toString().padStart(2, '0');
+          return `${m}:${sec}`;
+        },
+        async startRecording() {
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            this.mediaRecorder = new MediaRecorder(stream);
+            this.audioChunks =[];
+            this.isRecording = true;
+            this.recordingTime = 0;
+            if (this.recordingTimer) clearInterval(this.recordingTimer);
+            this.recordingTimer = setInterval(() => { this.recordingTime++; }, 1000);
+            
+            this.mediaRecorder.ondataavailable = e => this.audioChunks.push(e.data);
+            this.mediaRecorder.onstop = async () => {
+              clearInterval(this.recordingTimer);
+              this.isRecording = false;
+              this.isProcessingAudio = true;
+              
+              const audioBlob = new Blob(this.audioChunks, { type: this.mediaRecorder.mimeType });
+              const reader = new FileReader();
+              reader.onloadend = async () => {
+                const base64Data = reader.result.split(',')[1];
+                const mimeType = audioBlob.type.split(';')[0] || 'audio/webm';
+                const prompt = "この音声の文字起こしをしてください。ただし、「えーっと」「そのー」「あのー」などの不要なフィラーワードは完全に除去し、言い間違いや文法的な誤りがあれば自然な日本語になるように修正した上で、テキストのみを出力してください。解説や挨拶は一切不要です。";
+                
+                const resText = await this.askGeminiWithAudio(prompt, base64Data, mimeType);
+                if (resText) {
+                  this.sharedInput = (this.sharedInput ? this.sharedInput + '\n' : '') + resText.trim();
+                }
+                this.isProcessingAudio = false;
+              };
+              reader.readAsDataURL(audioBlob);
+            };
+            this.mediaRecorder.start();
+          } catch (e) { 
+            console.error(e);
+            alert("マイクへのアクセスが拒否されたか、エラーが発生しました。ブラウザのマイク権限を確認してください。"); 
+            this.isRecording = false;
+            if (this.recordingTimer) clearInterval(this.recordingTimer);
+          }
+        },
+        stopRecording() { 
+          if(this.mediaRecorder && this.mediaRecorder.state !== "inactive") { 
+            this.mediaRecorder.stop(); 
+          }
+        },
+        copyPrompt() {
+          navigator.clipboard.writeText(this.finalPrompt);
+          this.isCopyingPrompt = true;
+          setTimeout(() => { this.isCopyingPrompt = false; }, 2000);
+        },
+        async generatePrompt() {
+          if(!this.draftPrompt || !this.editorInstance) return;
+          this.isGeneratingPrompt = true;
+          const currentCode = this.editorInstance.getValue();
+          const prompt = `以下のコードに対するユーザーの要望を達成するための詳細なプロンプトを作成してください:\n\n【コード】\n${currentCode}\n\n【要望】\n${this.draftPrompt}`;
+          const result = await this.askGemini(prompt);
+          this.finalPrompt = result || '';
+          this.isGeneratingPrompt = false;
+        },
         async generateAndApplyPatches() {
           if (!this.patchInstruction || !this.editorInstance) return;
           
@@ -683,31 +782,6 @@
           doc.close();
         },
 
-        // --- 音声入力 ---
-        async startRecording() {
-          try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            this.mediaRecorder = new MediaRecorder(stream);
-            this.audioChunks =[];
-            this.mediaRecorder.ondataavailable = e => this.audioChunks.push(e.data);
-            this.mediaRecorder.onstop = async () => {
-              this.isProcessingAudio = true;
-              const audioBlob = new Blob(this.audioChunks, { type: this.mediaRecorder.mimeType });
-              const reader = new FileReader();
-              reader.onloadend = async () => {
-                const base64Data = reader.result.split(',')[1];
-                const resText = await this.askGeminiWithAudio("この音声の指示を自然な日本語に文字起こししてください。テキストのみ出力してください。", base64Data, audioBlob.type.split(';')[0]);
-                if (resText) this.patchInstruction = (this.patchInstruction ? this.patchInstruction + '\n' : '') + resText.trim();
-                this.isProcessingAudio = false;
-              };
-              reader.readAsDataURL(audioBlob);
-            };
-            this.mediaRecorder.start();
-            this.isRecording = true;
-          } catch (e) { alert("マイクへのアクセスが拒否されました。"); }
-        },
-        stopRecording() { if(this.mediaRecorder) { this.mediaRecorder.stop(); this.isRecording = false; } },
-
         // --- AI API ---
         async askGemini(promptText, requireJson = false) {
           const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.settings.geminiModel}:generateContent?key=${this.settings.geminiKey}`;
@@ -773,6 +847,12 @@
           ver.isSavingMemo = true;
           await this.gasRequest('updateVersionMemo', { versionId: ver.VersionID, memo: ver.Memo || '' });
           ver.isSavingMemo = false;
+        },
+        copyCode(ver) {
+          navigator.clipboard.writeText(ver.Code).then(() => {
+            ver.isCopying = true;
+            setTimeout(() => { ver.isCopying = false; }, 2000);
+          });
         },
         async createNewApp() {
           const name = prompt('アプリ名:');
