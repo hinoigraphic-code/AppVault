@@ -272,7 +272,11 @@
                     <span class="material-icons-round text-sm mr-1 transition-transform group-open:rotate-90">chevron_right</span> コード全文を表示
                     <button @click.stop="copyCode(ver)" class="ml-3 flex items-center text-xs bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 px-2 py-0.5 rounded border border-gray-300 dark:border-slate-600 text-gray-600 dark:text-slate-300 transition-colors">
                       <span class="material-icons-round text-[14px] mr-1">{{ ver.isCopying ? 'check' : 'content_copy' }}</span>
-                      {{ ver.isCopying ? 'コピーが完了しました' : 'コードをコピー' }}
+                      {{ ver.isCopying ? 'コピーが完了しました' : 'コピー' }}
+                    </button>
+                    <button @click.stop.prevent="downloadHtml(ver)" class="ml-2 flex items-center text-xs bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 px-2 py-0.5 rounded border border-gray-300 dark:border-slate-600 text-gray-600 dark:text-slate-300 transition-colors">
+                      <span class="material-icons-round text-[14px] mr-1">download</span>
+                      DL
                     </button>
                   </summary>
                   <div class="mt-3">
@@ -886,6 +890,22 @@
             ver.isCopying = true;
             setTimeout(() => { ver.isCopying = false; }, 2000);
           });
+        },
+        downloadHtml(ver) {
+          if (!ver.Code) {
+            alert("ダウンロードするコードが見つかりません。");
+            return;
+          }
+          const blob = new Blob([ver.Code], { type: 'text/html;charset=utf-8' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          const fileName = `${this.currentApp.AppName || 'project'}_v${this.versions.length - this.versions.indexOf(ver)}.html`;
+          a.href = url;
+          a.download = fileName;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
         },
         async createNewApp() {
           const name = prompt('アプリ名:');
