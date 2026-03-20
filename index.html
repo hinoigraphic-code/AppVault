@@ -139,6 +139,19 @@
           
           <!-- Editor Tab -->
           <div v-show="activeTab === 'editor'" class="absolute inset-0 flex flex-col p-2 sm:p-4">
+            <div class="flex gap-1 overflow-x-auto mb-2 p-1 bg-gray-100 dark:bg-slate-800 rounded-lg no-scrollbar">
+              <button @click="editorInstance.selectAll()" class="p-2 text-gray-600 dark:text-slate-400"><span class="material-icons-round text-lg">select_all</span></button>
+              <button @click="editorInstance.execCommand('copy')" class="p-2 text-gray-600 dark:text-slate-400"><span class="material-icons-round text-lg">content_copy</span></button>
+              <button @click="editorInstance.execCommand('paste')" class="p-2 text-gray-600 dark:text-slate-400"><span class="material-icons-round text-lg">content_paste</span></button>
+              <button @click="editorInstance.execCommand('find')" class="p-2 text-gray-600 dark:text-slate-400"><span class="material-icons-round text-lg">search</span></button>
+              <button @click="editorInstance.undo()" class="p-2 text-gray-600 dark:text-slate-400"><span class="material-icons-round text-lg">undo</span></button>
+              <button @click="editorInstance.redo()" class="p-2 text-gray-600 dark:text-slate-400"><span class="material-icons-round text-lg">redo</span></button>
+              <button @click="isShiftActive = !isShiftActive" :class="isShiftActive ? 'bg-primary text-white' : 'text-gray-600 dark:text-slate-400'" class="p-2 rounded-md"><span class="material-icons-round text-lg">shift</span></button>
+              <button @click="navigateEditor('up')" class="p-2 text-gray-600 dark:text-slate-400"><span class="material-icons-round text-lg">keyboard_arrow_up</span></button>
+              <button @click="navigateEditor('down')" class="p-2 text-gray-600 dark:text-slate-400"><span class="material-icons-round text-lg">keyboard_arrow_down</span></button>
+              <button @click="navigateEditor('left')" class="p-2 text-gray-600 dark:text-slate-400"><span class="material-icons-round text-lg">keyboard_arrow_left</span></button>
+              <button @click="navigateEditor('right')" class="p-2 text-gray-600 dark:text-slate-400"><span class="material-icons-round text-lg">keyboard_arrow_right</span></button>
+            </div>
             <div class="flex justify-between items-center mb-2 px-1">
               <div class="flex items-center">
                 <span class="text-xs font-medium text-gray-500 dark:text-slate-400 hidden sm:inline-block">最新コードを編集</span>
@@ -405,7 +418,8 @@
           btnPos: { x: 0, y: 0 },
           isDragging: false,
           hasMoved: false,
-          dragOffset: { x: 0, y: 0 }
+          dragOffset: { x: 0, y: 0 },
+          isShiftActive: false
         };
       },
       computed: {
@@ -730,6 +744,25 @@
         },
         handleResize() {
           if (window.innerWidth >= 768) this.mobileMenuOpen = false;
+        },
+        navigateEditor(dir) {
+          if (!this.editorInstance) return;
+          if (this.isShiftActive) {
+            switch(dir) {
+              case 'left': this.editorInstance.selection.selectLeft(); break;
+              case 'right': this.editorInstance.selection.selectRight(); break;
+              case 'up': this.editorInstance.selection.selectUp(); break;
+              case 'down': this.editorInstance.selection.selectDown(); break;
+            }
+          } else {
+            switch(dir) {
+              case 'left': this.editorInstance.navigateLeft(); break;
+              case 'right': this.editorInstance.navigateRight(); break;
+              case 'up': this.editorInstance.navigateUp(); break;
+              case 'down': this.editorInstance.navigateDown(); break;
+            }
+          }
+          this.editorInstance.focus();
         },
         initEditor() {
           const el = document.getElementById("editor");
