@@ -302,6 +302,21 @@
                   <button @click="aiMode = 'manual'" :class="['flex-1 py-2 text-sm font-bold rounded-lg transition-all', aiMode === 'manual' ? 'bg-indigo-600 text-white shadow-lg' : 'text-gray-500 dark:text-slate-400 hover:text-gray-700']">修正方法を聞く</button>
                   <button @click="aiMode = 'prompt'" :class="['flex-1 py-2 text-sm font-bold rounded-lg transition-all', aiMode === 'prompt' ? 'bg-indigo-600 text-white shadow-lg' : 'text-gray-500 dark:text-slate-400 hover:text-gray-700']">プロンプト生成</button>
                 </div>
+                <!-- 画像アップロードUI -->
+                <div class="mb-4">
+                  <label class="block text-xs font-bold text-gray-500 dark:text-slate-400 mb-2">参照画像 (ドラッグ&ドロップ可)</label>
+                  <div @drop.prevent="handleDrop" @dragover.prevent class="border-2 border-dashed border-gray-300 dark:border-slate-700 rounded-xl p-4 flex flex-wrap gap-2 min-h-[80px] items-center bg-gray-50 dark:bg-slate-900 transition-colors">
+                    <div v-for="(img, idx) in uploadedImages" :key="idx" class="relative group w-16 h-16 rounded-lg overflow-hidden border border-gray-200">
+                      <img :src="img.data" class="w-full h-full object-cover">
+                      <button @click="removeImage(idx)" class="absolute top-0 right-0 bg-black/50 text-white rounded-bl-lg p-0.5"><span class="material-icons-round text-xs">close</span></button>
+                    </div>
+                    <label class="w-16 h-16 flex flex-col items-center justify-center border-2 border-dashed border-gray-300 dark:border-slate-600 rounded-lg cursor-pointer hover:border-primary">
+                      <span class="material-icons-round text-gray-400">add_photo_alternate</span>
+                      <input type="file" multiple accept="image/*" class="hidden" @change="handleFileSelect">
+                    </label>
+                  </div>
+                </div>
+
                 <div class="relative w-full flex-1">
                   <textarea v-model="sharedInput" class="w-full h-full p-4 pr-10 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-primary/50 text-sm resize-none dark:text-slate-200 transition-colors" 
                             :placeholder="aiMode === 'patch' ? '例: ボタンを赤色にして' : (aiMode === 'manual' ? '例: どこを直せば文字が大きくなりますか？' : 'やりたいことを入力してください...')"></textarea>
@@ -451,7 +466,8 @@
           isDragging: false,
           hasMoved: false,
           dragOffset: { x: 0, y: 0 },
-          isShiftActive: false
+          isShiftActive: false,
+          uploadedImages: []
         };
       },
       computed: {
@@ -594,7 +610,7 @@ ${currentCode}
 【ユーザーの要望】
 ${this.sharedInput}`;
 
-          const result = await this.askGemini(prompt);
+          const result = await this.askGeminiMultimodal(prompt);
           this.manualInstruction = result || '回答を生成できませんでした。';
           this.isGeneratingManual = false;
         },
@@ -658,12 +674,20 @@ ${this.sharedInput}`;
             setTimeout(() => { this.isCopyingManual = false; }, 2000);
           });
         },
+        handleFileSelect(e) { Array.from(e.target.files).forEach(this.processFile); },
+        handleDrop(e) { Array.from(e.dataTransfer.files).forEach(this.processFile); },
+        processFile(file) {
+          const reader = new FileReader();
+          reader.onload = (e) => { this.uploadedImages.push({ data: e.target.result, mime: file.type }); };
+          reader.readAsDataURL(file);
+        },
+        removeImage(index) { this.uploadedImages.splice(index, 1); },
         async generatePrompt() {
           if(!this.draftPrompt || !this.editorInstance) return;
           this.isGeneratingPrompt = true;
           const currentCode = this.editorInstance.getValue();
           const prompt = `以下のコードに対するユーザーの要望を達成するための詳細なプロンプトを作成してください:\n\n【コード】\n${currentCode}\n\n【要望】\n${this.draftPrompt}`;
-          const result = await this.askGemini(prompt);
+          const result = await this.askGeminiMultimodal(prompt);
           this.finalPrompt = result || '';
           this.isGeneratingPrompt = false;
         },
@@ -886,6 +910,22 @@ ${this.sharedInput}`;
           const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.settings.geminiModel}:generateContent?key=${this.settings.geminiKey}`;
           const body = { contents:[{ parts:[{ text: promptText }] }] };
           if(requireJson) body.generationConfig = { responseMimeType: "application/json" };
+          try {
+            const res = await fetch(url, { method: 'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+            const data = await res.json();
+            if(data.error) throw new Error(data.error.message);
+            return data.candidates[0].content.parts[0].text;
+          } catch(e) { console.error(e); return null; }
+        },
+
+        async askGeminiMultimodal(promptText, requireJson = false) {
+          const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.settings.geminiModel}:generateContent?key=${this.settings.geminiKey}`;
+          const parts = [{ text: promptText }];
+          this.uploadedImages.forEach(img => {
+            parts.push({ inlineData: { mimeType: img.mime, data: img.data.split(',')[1] } });
+          });
+          const body = { contents: [{ parts: parts }] };
+          if (requireJson) body.generationConfig = { responseMimeType: "application/json" };
           try {
             const res = await fetch(url, { method: 'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
             const data = await res.json();
