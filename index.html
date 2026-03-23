@@ -82,7 +82,7 @@
     </transition>
 
     <!-- Sidebar -->
-    <aside :class="['fixed inset-y-0 left-0 z-40 w-72 bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-800 flex flex-col transition-all duration-300 ease-in-out md:relative md:translate-x-0', mobileMenuOpen ? 'translate-x-0' : '-translate-x-full']">
+    <aside :class="['fixed inset-y-0 left-0 z-40 w-72 bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-800 flex flex-col transition-all duration-300 ease-in-out md:relative', mobileMenuOpen ? 'translate-x-0' : '-translate-x-full', isSidebarOpen ? 'md:translate-x-0 md:ml-0' : 'md:-ml-72']">
       <div class="p-5 flex items-center justify-between border-b border-gray-100 dark:border-slate-800 transition-colors duration-300">
         <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">VibeCode</h1>
         <div class="flex items-center space-x-1">
@@ -121,6 +121,7 @@
         <header class="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-4 z-10 transition-colors duration-300">
           <div class="flex items-center space-x-3 w-full sm:w-auto">
             <button @click="mobileMenuOpen = true" class="md:hidden p-2 -ml-2 text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg"><span class="material-icons-round">menu</span></button>
+            <button @click="isSidebarOpen = !isSidebarOpen" class="hidden md:block p-2 -ml-2 text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg"><span class="material-icons-round">{{ isSidebarOpen ? 'menu_open' : 'menu' }}</span></button>
             <h2 class="text-lg font-bold text-gray-800 dark:text-slate-200 truncate flex-1">{{ currentApp.AppName || '名称未設定' }}</h2>
             <button @click="deleteCurrentApp" class="text-red-400 hover:text-red-600 dark:hover:text-red-400 p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors ml-auto sm:ml-2" title="このアプリを削除">
               <span class="material-icons-round">delete_outline</span>
@@ -378,6 +379,7 @@
         <h2 class="text-xl font-bold text-gray-700 dark:text-slate-200 mb-2">プロジェクトを選択してください</h2>
         <p class="text-gray-500 dark:text-slate-400 text-sm max-w-sm">左側のメニューからアプリを選択するか、新しく作成して開発を始めましょう。</p>
         <button @click="mobileMenuOpen = true" class="mt-6 md:hidden px-6 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-sm font-medium text-gray-700 dark:text-slate-300">メニューを開く</button>
+        <button v-if="!isSidebarOpen" @click="isSidebarOpen = true" class="mt-6 hidden md:block px-6 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-sm font-medium text-gray-700 dark:text-slate-300">メニューを開く</button>
       </div>
 
     </main>
@@ -419,6 +421,7 @@
           audioChunks:[],
           isProcessingAudio: false,
           isFullscreen: false,
+          isSidebarOpen: true,
           btnPos: { x: 0, y: 0 },
           isDragging: false,
           hasMoved: false,
@@ -849,10 +852,22 @@
           if (newCode === oldCode) { alert('変更がありません。'); return; }
           this.isUpdating = true;
           
-          const summaryPrompt = `コード比較担当者として、古いコードと新しいコードの変更点をJSONで要約してください。
-          { "summary": "箇条書きで", "hasRegression": false, "regressionDetails": "" }
-          古いコード: ${oldCode}
-          新しいコード: ${newCode}`;
+          const summaryPrompt = `あなたは優秀なコードレビュアーです。古いコードと新しいコードを緻密に比較し、変更点をJSON形式で抽出してください。
+微細なテキストの変更、CSSクラスの増減、ロジックの些細な修正なども見逃さずにすべて検知してください。
+また、以前あった機能や表示項目が意図せず消えている場合は「デグレード」として厳格に判定してください。
+
+出力JSONフォーマット:
+{
+  "summary": "変更内容を具体的かつ網羅的に箇条書きで記述（些細な変更も含める）",
+  "hasRegression": true または false (微細なものでも機能や表示の欠落があればtrue),
+  "regressionDetails": "デグレードが検出された場合、その詳細を具体的に記述（なければ空文字）"
+}
+
+古いコード:
+${oldCode}
+
+新しいコード:
+${newCode}`;
           
           let responseText = await this.askGemini(summaryPrompt, true);
           let resultData = { summary: "変更内容の要約を取得できませんでした。", hasRegression: false, regressionDetails: "" };
