@@ -155,13 +155,18 @@
             </div>
             <div class="flex justify-between items-center mb-2 px-1">
               <div class="flex items-center">
-                <span class="text-xs font-medium text-gray-500 dark:text-slate-400 hidden sm:inline-block">最新コードを編集</span>
-                <span v-if="versions.length > 0" class="ml-2 bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 px-2.5 py-1 rounded-md font-bold text-[11px] tracking-wide shadow-sm border border-indigo-200 dark:border-indigo-500/30 transition-colors duration-300">
-                  現在の最新: v{{ versions.length }}
-                </span>
-                <span v-else class="ml-2 bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-slate-400 px-2.5 py-1 rounded-md font-bold text-[11px] tracking-wide shadow-sm border border-gray-200 dark:border-slate-700 transition-colors duration-300">
+                <span class="text-xs font-medium text-gray-500 dark:text-slate-400 hidden sm:inline-block">エディタ</span>
+                <span v-if="versions.length === 0" class="ml-2 bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-slate-400 px-2.5 py-1 rounded-md font-bold text-[11px] tracking-wide shadow-sm border border-gray-200 dark:border-slate-700 transition-colors duration-300">
                   新規作成
                 </span>
+                <template v-else>
+                  <span v-if="currentEditorVersion === versions.length" class="ml-2 bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 px-2.5 py-1 rounded-md font-bold text-[11px] tracking-wide shadow-sm border border-indigo-200 dark:border-indigo-500/30 transition-colors duration-300">
+                    現在の最新: v{{ versions.length }}
+                  </span>
+                  <span v-else class="ml-2 bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 px-2.5 py-1 rounded-md font-bold text-[11px] tracking-wide shadow-sm border border-amber-200 dark:border-amber-500/30 transition-colors duration-300">
+                    過去のバージョンを表示中: v{{ currentEditorVersion }}
+                  </span>
+                </template>
               </div>
               <button @click="updateCode" :disabled="isUpdating || isLoadingApp" class="ml-auto bg-green-600 dark:bg-emerald-600 hover:bg-green-700 dark:hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-semibold flex items-center shadow-sm disabled:opacity-50 transition-all">
                 <span class="material-icons-round mr-1.5 text-sm" :class="{'animate-spin': isUpdating}">{{ isUpdating ? 'sync' : 'cloud_upload' }}</span>
@@ -223,9 +228,14 @@
                     </span>
                     <span class="text-xs text-gray-400 dark:text-slate-400 font-medium">{{ new Date(ver.CreatedAt).toLocaleString() }}</span>
                   </div>
-                  <button @click="deleteVersion(ver)" class="text-gray-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors ml-auto sm:ml-0 border border-transparent dark:hover:border-red-900/30" title="このバージョンを削除">
-                    <span class="material-icons-round text-[18px]">delete_outline</span>
-                  </button>
+                  <div class="flex items-center space-x-2 ml-auto sm:ml-0">
+                    <button @click="loadVersionToEditor(ver, index)" class="text-indigo-500 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 p-1.5 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors flex items-center text-xs font-bold border border-indigo-100 dark:border-indigo-900/30" title="このバージョンをエディタで開く">
+                      <span class="material-icons-round text-[16px] mr-1">edit</span> エディタで開く
+                    </button>
+                    <button @click="deleteVersion(ver)" class="text-gray-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors border border-transparent dark:hover:border-red-900/30" title="このバージョンを削除">
+                      <span class="material-icons-round text-[18px]">delete_outline</span>
+                    </button>
+                  </div>
                 </div>
 
                 <div class="mb-4 border border-gray-200 dark:border-slate-700 rounded-xl overflow-hidden shadow-sm transition-colors duration-300">
@@ -406,6 +416,7 @@
           isPatching: false,
           patchResults:[],
           prePatchCode: null,
+          currentEditorVersion: null,
           draftPrompt: '',
           finalPrompt: '',
           isGeneratingPrompt: false,
@@ -734,6 +745,7 @@
           
           this.$nextTick(() => {
             const latestCode = this.versions.length > 0 ? this.versions[0].Code : '\n';
+            this.currentEditorVersion = this.versions.length > 0 ? this.versions.length : null;
             if(this.editorInstance) {
               this.editorInstance.setValue(latestCode, -1);
               this.editorInstance.setReadOnly(false); 
@@ -882,13 +894,29 @@ ${newCode}`;
 
           if (res) {
             const verRes = await this.gasRequest('getVersions', { appId: this.currentApp.AppID });
-            if(verRes) this.versions = verRes.data.map(v => ({ ...v, isSavingMemo: false }));
+            if(verRes) {
+              this.versions = verRes.data.map(v => ({ ...v, isSavingMemo: false }));
+              this.currentEditorVersion = this.versions.length;
+            }
             const appIdx = this.apps.findIndex(a => a.AppID === this.currentApp.AppID);
             if (appIdx !== -1) this.apps[appIdx].UpdatedAt = new Date().toISOString();
             alert('保存完了！');
             this.activeTab = 'history';
           }
           this.isUpdating = false;
+        },
+        loadVersionToEditor(ver, index) {
+          if (!this.editorInstance) return;
+          const versionNum = this.versions.length - index;
+          if (!confirm(`v${versionNum} のコードをエディタに読み込みますか？\n(現在エディタにある未保存の変更は失われます)`)) return;
+          
+          this.editorInstance.setValue(ver.Code, -1);
+          this.activeTab = 'editor';
+          this.prePatchCode = null;
+          this.patchResults = [];
+          this.currentEditorVersion = versionNum;
+          
+          alert(`v${versionNum} をエディタに読み込みました。`);
         },
         async deleteVersion(ver) {
           if (!confirm('削除しますか？')) return;
