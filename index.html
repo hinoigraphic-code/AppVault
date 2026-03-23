@@ -155,18 +155,13 @@
             </div>
             <div class="flex justify-between items-center mb-2 px-1">
               <div class="flex items-center">
-                <span class="text-xs font-medium text-gray-500 dark:text-slate-400 hidden sm:inline-block">エディタ</span>
-                <span v-if="versions.length === 0" class="ml-2 bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-slate-400 px-2.5 py-1 rounded-md font-bold text-[11px] tracking-wide shadow-sm border border-gray-200 dark:border-slate-700 transition-colors duration-300">
+                <span class="text-xs font-medium text-gray-500 dark:text-slate-400 hidden sm:inline-block">最新コードを編集</span>
+                <span v-if="versions.length > 0" class="ml-2 bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 px-2.5 py-1 rounded-md font-bold text-[11px] tracking-wide shadow-sm border border-indigo-200 dark:border-indigo-500/30 transition-colors duration-300">
+                  現在の最新: v{{ versions.length }}
+                </span>
+                <span v-else class="ml-2 bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-slate-400 px-2.5 py-1 rounded-md font-bold text-[11px] tracking-wide shadow-sm border border-gray-200 dark:border-slate-700 transition-colors duration-300">
                   新規作成
                 </span>
-                <template v-else>
-                  <span v-if="currentEditorVersion === versions.length" class="ml-2 bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 px-2.5 py-1 rounded-md font-bold text-[11px] tracking-wide shadow-sm border border-indigo-200 dark:border-indigo-500/30 transition-colors duration-300">
-                    現在の最新: v{{ versions.length }}
-                  </span>
-                  <span v-else class="ml-2 bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 px-2.5 py-1 rounded-md font-bold text-[11px] tracking-wide shadow-sm border border-amber-200 dark:border-amber-500/30 transition-colors duration-300">
-                    過去のバージョンを表示中: v{{ currentEditorVersion }}
-                  </span>
-                </template>
               </div>
               <button @click="updateCode" :disabled="isUpdating || isLoadingApp" class="ml-auto bg-green-600 dark:bg-emerald-600 hover:bg-green-700 dark:hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-semibold flex items-center shadow-sm disabled:opacity-50 transition-all">
                 <span class="material-icons-round mr-1.5 text-sm" :class="{'animate-spin': isUpdating}">{{ isUpdating ? 'sync' : 'cloud_upload' }}</span>
@@ -304,26 +299,35 @@
               <div class="bg-white dark:bg-darkCard p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-800 flex flex-col h-full transition-colors duration-300">
                 <div class="flex bg-gray-100 dark:bg-slate-950 p-1 rounded-xl mb-4">
                   <button @click="aiMode = 'patch'" :class="['flex-1 py-2 text-sm font-bold rounded-lg transition-all', aiMode === 'patch' ? 'bg-indigo-600 text-white shadow-lg' : 'text-gray-500 dark:text-slate-400 hover:text-gray-700']">スマートパッチ</button>
+                  <button @click="aiMode = 'manual'" :class="['flex-1 py-2 text-sm font-bold rounded-lg transition-all', aiMode === 'manual' ? 'bg-indigo-600 text-white shadow-lg' : 'text-gray-500 dark:text-slate-400 hover:text-gray-700']">修正方法を聞く</button>
                   <button @click="aiMode = 'prompt'" :class="['flex-1 py-2 text-sm font-bold rounded-lg transition-all', aiMode === 'prompt' ? 'bg-indigo-600 text-white shadow-lg' : 'text-gray-500 dark:text-slate-400 hover:text-gray-700']">プロンプト生成</button>
                 </div>
-                <div class="flex-1 flex flex-col relative">
-                  <textarea v-model="sharedInput" class="w-full flex-1 p-4 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-primary/50 text-sm resize-none dark:text-slate-200 transition-colors" 
-                            :placeholder="aiMode === 'patch' ? '例: ボタンを赤色にして、角丸を強めて' : 'やりたいことを入力してください...'"></textarea>
-                  <div class="flex gap-2 mt-4">
-                    <button @click="isRecording ? stopRecording() : startRecording()" 
-                            :class="isRecording ? 'bg-red-500 text-white shadow-red-500/50' : 'bg-gray-200 dark:bg-slate-800 text-gray-700 dark:text-slate-300 hover:bg-gray-300 dark:hover:bg-slate-700'"
-                            class="px-4 py-3 rounded-xl font-bold flex items-center transition-all disabled:opacity-50"
-                            :disabled="isProcessingAudio">
-                      <span class="material-icons-round mr-2" :class="{'animate-pulse': isRecording, 'animate-spin': isProcessingAudio}">
-                        {{ isProcessingAudio ? 'autorenew' : (isRecording ? 'stop_circle' : 'mic') }}
-                      </span>
-                      {{ isRecording ? ('録音中... ' + formatTime(recordingTime)) : (isProcessingAudio ? '処理中...' : '音声入力') }}
-                    </button>
-                    <button @click="executeAiAction" :disabled="isPatching || isGeneratingPrompt || !sharedInput || isProcessingAudio" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-bold flex items-center justify-center shadow-lg disabled:opacity-50 transition-all">
-                      <span class="material-icons-round mr-2" :class="{'animate-spin': isPatching || isGeneratingPrompt}">{{ (isPatching || isGeneratingPrompt) ? 'sync' : 'play_arrow' }}</span>
-                      {{ aiMode === 'patch' ? 'パッチを適用する' : 'プロンプトを生成する' }}
-                    </button>
-                  </div>
+                <div class="relative w-full flex-1">
+                  <textarea v-model="sharedInput" class="w-full h-full p-4 pr-10 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-primary/50 text-sm resize-none dark:text-slate-200 transition-colors" 
+                            :placeholder="aiMode === 'patch' ? '例: ボタンを赤色にして' : (aiMode === 'manual' ? '例: どこを直せば文字が大きくなりますか？' : 'やりたいことを入力してください...')"></textarea>
+                  
+                  <button v-if="sharedInput" 
+                          @click="sharedInput = ''"
+                          class="absolute top-2 right-2 p-1 text-gray-400 hover:text-red-500 transition-colors bg-white/50 dark:bg-slate-900/50 rounded-full"
+                          title="入力内容をクリア">
+                    <span class="material-icons-round text-lg">close</span>
+                  </button>
+                </div>
+
+                <div class="flex gap-2 mt-4">
+                  <button @click="isRecording ? stopRecording() : startRecording()" 
+                          :class="isRecording ? 'bg-red-500 text-white shadow-red-500/50' : 'bg-gray-200 dark:bg-slate-800 text-gray-700 dark:text-slate-300 hover:bg-gray-300 dark:hover:bg-slate-700'"
+                          class="px-4 py-3 rounded-xl font-bold flex items-center transition-all disabled:opacity-50"
+                          :disabled="isProcessingAudio">
+                    <span class="material-icons-round mr-2" :class="{'animate-pulse': isRecording, 'animate-spin': isProcessingAudio}">
+                      {{ isProcessingAudio ? 'autorenew' : (isRecording ? 'stop_circle' : 'mic') }}
+                    </span>
+                    {{ isRecording ? ('録音中... ' + formatTime(recordingTime)) : (isProcessingAudio ? '処理中...' : '音声入力') }}
+                  </button>
+                  <button @click="executeAiAction" :disabled="isPatching || isGeneratingPrompt || isGeneratingManual || !sharedInput || isProcessingAudio" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-bold flex items-center justify-center shadow-lg disabled:opacity-50 transition-all">
+                    <span class="material-icons-round mr-2" :class="{'animate-spin': isPatching || isGeneratingPrompt || isGeneratingManual}">{{ (isPatching || isGeneratingPrompt || isGeneratingManual) ? 'sync' : 'play_arrow' }}</span>
+                    {{ aiMode === 'patch' ? 'パッチを適用' : (aiMode === 'manual' ? '修正方法を聞く' : 'プロンプト生成') }}
+                  </button>
                 </div>
                 <div v-if="aiMode === 'prompt' && finalPrompt" class="mt-4 p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl border border-indigo-200 dark:border-indigo-800 relative">
                   <p class="text-xs text-indigo-800 dark:text-indigo-200 mb-2 font-bold">生成結果:</p>
@@ -331,6 +335,14 @@
                   <button @click="copyPrompt" class="absolute bottom-2 right-2 flex items-center text-[10px] bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 px-2 py-1 rounded shadow-sm hover:bg-indigo-200 dark:hover:bg-indigo-800 transition-colors">
                     <span class="material-icons-round text-xs mr-1">{{ isCopyingPrompt ? 'check' : 'content_copy' }}</span>
                     {{ isCopyingPrompt ? 'コピー完了！' : 'コピー' }}
+                  </button>
+                </div>
+                <div v-if="aiMode === 'manual' && manualInstruction" class="mt-4 p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl border border-indigo-200 dark:border-indigo-800 relative">
+                  <p class="text-xs text-indigo-800 dark:text-indigo-200 mb-2 font-bold">修正手順:</p>
+                  <div class="prose prose-sm dark:prose-invert max-w-none text-xs text-gray-800 dark:text-slate-200" v-html="renderMarkdown(manualInstruction)"></div>
+                  <button @click="copyManualInstruction" class="absolute bottom-2 right-2 flex items-center text-[10px] bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 px-2 py-1 rounded shadow-sm hover:bg-indigo-200 dark:hover:bg-indigo-800 transition-colors">
+                    <span class="material-icons-round text-xs mr-1">{{ isCopyingManual ? 'check' : 'content_copy' }}</span>
+                    {{ isCopyingManual ? 'コピー完了！' : 'コピー' }}
                   </button>
                 </div>
                 <div v-if="aiMode === 'patch' && prePatchCode" class="mt-4 flex">
@@ -416,16 +428,18 @@
           isPatching: false,
           patchResults:[],
           prePatchCode: null,
-          currentEditorVersion: null,
           draftPrompt: '',
           finalPrompt: '',
           isGeneratingPrompt: false,
+          manualInstruction: '',
+          isGeneratingManual: false,
           sharedInput: '',
           aiMode: 'patch',
           isRecording: false,
           recordingTime: 0,
           recordingTimer: null,
           isCopyingPrompt: false,
+          isCopyingManual: false,
           
           mobileMenuOpen: false,
           mediaRecorder: null,
@@ -551,10 +565,38 @@
           if (this.aiMode === 'patch') {
             this.patchInstruction = this.sharedInput;
             this.generateAndApplyPatches();
+          } else if (this.aiMode === 'manual') {
+            this.generateManualInstruction();
           } else {
             this.draftPrompt = this.sharedInput;
             this.generatePrompt();
           }
+        },
+        async generateManualInstruction() {
+          if(!this.sharedInput || !this.editorInstance) return;
+          this.isGeneratingManual = true;
+          this.manualInstruction = '';
+          const currentCode = this.editorInstance.getValue();
+          const prompt = `あなたは親切で正確なプログラミングメンターです。
+以下の現在のソースコードに対して、ユーザーの要望を満たすための修正手順を教えてください。
+
+【重要ルール】
+・「コード内のどこを検索して、どのように置き換えるか（または上下に追加するか）」をMarkdown形式で具体的に提示してください。
+・検索対象となるコード（【検索するコード】）と、置き換え後または追加するコード（【差し替えるコード】など）をそれぞれコードブロックで提示してください。
+・初心者でも絶対に間違えないように、コードの一部を「中略」や「...」などで省略することは **絶対に避けて** ください。検索するコードは、エディタ上のテキストと完全に一致する文字列として出力してください。
+・複数の箇所を修正する場合は、ステップ番号（ステップ1、ステップ2...）を振って順番に説明してください。
+
+【現在のコード】
+\`\`\`
+${currentCode}
+\`\`\`
+
+【ユーザーの要望】
+${this.sharedInput}`;
+
+          const result = await this.askGemini(prompt);
+          this.manualInstruction = result || '回答を生成できませんでした。';
+          this.isGeneratingManual = false;
         },
         formatTime(s) {
           const m = Math.floor(s / 60).toString().padStart(2, '0');
@@ -609,6 +651,12 @@
           navigator.clipboard.writeText(this.finalPrompt);
           this.isCopyingPrompt = true;
           setTimeout(() => { this.isCopyingPrompt = false; }, 2000);
+        },
+        copyManualInstruction() {
+          navigator.clipboard.writeText(this.manualInstruction).then(() => {
+            this.isCopyingManual = true;
+            setTimeout(() => { this.isCopyingManual = false; }, 2000);
+          });
         },
         async generatePrompt() {
           if(!this.draftPrompt || !this.editorInstance) return;
@@ -745,7 +793,6 @@
           
           this.$nextTick(() => {
             const latestCode = this.versions.length > 0 ? this.versions[0].Code : '\n';
-            this.currentEditorVersion = this.versions.length > 0 ? this.versions.length : null;
             if(this.editorInstance) {
               this.editorInstance.setValue(latestCode, -1);
               this.editorInstance.setReadOnly(false); 
@@ -894,10 +941,7 @@ ${newCode}`;
 
           if (res) {
             const verRes = await this.gasRequest('getVersions', { appId: this.currentApp.AppID });
-            if(verRes) {
-              this.versions = verRes.data.map(v => ({ ...v, isSavingMemo: false }));
-              this.currentEditorVersion = this.versions.length;
-            }
+            if(verRes) this.versions = verRes.data.map(v => ({ ...v, isSavingMemo: false }));
             const appIdx = this.apps.findIndex(a => a.AppID === this.currentApp.AppID);
             if (appIdx !== -1) this.apps[appIdx].UpdatedAt = new Date().toISOString();
             alert('保存完了！');
@@ -914,7 +958,6 @@ ${newCode}`;
           this.activeTab = 'editor';
           this.prePatchCode = null;
           this.patchResults = [];
-          this.currentEditorVersion = versionNum;
           
           alert(`v${versionNum} をエディタに読み込みました。`);
         },
